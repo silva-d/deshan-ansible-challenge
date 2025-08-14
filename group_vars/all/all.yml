@@ -1,0 +1,7 @@
+vault_password_file: "~/vault_pass.txt"
+generated_inventory_dir: "{{ playbook_dir }}/inventory"
+my_inventory_dir: "{{ playbook_dir }}/inventory"
+
+vm_hosts:
+  - name: web1
+  - name: web2

@@ -1,0 +1,2 @@
+aws_region: ap-southeast-2
+ami_id: ami-0deeb71371199f16f  # Amazon Linux 2 AMI in us-east-1, update if needed

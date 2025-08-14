@@ -1,0 +1,7 @@
+Listen 443 https
+<VirtualHost *:443>
+    DocumentRoot "{{ web_root }}"
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/{{ ssl_dir }}/selfsigned.crt
+    SSLCertificateKeyFile /etc/ssl/{{ ssl_dir }}/selfsigned.key
+</VirtualHost>

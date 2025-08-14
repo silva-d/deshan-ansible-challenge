@@ -1,0 +1,4 @@
+[webservers]
+{% for instance in ec2_instances.results | map(attribute='instances') | list | flatten %}
+{{ instance.public_ip_address | default(instance.private_ip_address) }} ansible_ssh_private_key_file=/tmp/onehtmlpage_key.pem ansible_user=ec2-user -o StrictHostKeyChecking=no
+{% endfor %}

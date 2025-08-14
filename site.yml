@@ -1,0 +1,12 @@
+- name: Provision all AWS Resources
+  hosts: localhost
+  gather_facts: true
+  roles:
+    - vm_provision
+
+- name: Configure webservers and deploy html games
+  hosts: webservers
+  become: true
+  roles:
+    - base_config
+    - configure_webserver

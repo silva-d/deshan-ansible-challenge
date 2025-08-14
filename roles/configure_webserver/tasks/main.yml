@@ -1,0 +1,81 @@
+---
+- name: Install Apache
+  ansible.builtin.package:
+    name: "{{ apache_package }}"
+    state: present
+
+- name: Enable and start Apache
+  ansible.builtin.service:
+    name: "{{ apache_service }}"
+    state: started
+    enabled: true
+
+- name: Copy game HTML file per host
+  ansible.builtin.copy:
+    src: "{{ html_file | trim }}"
+    dest: "{{ web_root }}/index.html"
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    html_file: >
+      {% if inventory_hostname == 'web1' %}
+      mini_car_game.html
+      {% elif inventory_hostname == 'web2' %}
+      bronchalia.htm
+      {% else %}
+      default.html
+      {% endif %}
+
+- name: Create self-signed SSL cert directory
+  ansible.builtin.file:
+    path: /etc/ssl/{{ ssl_dir }}
+    state: directory
+    mode: "0700"
+    owner: root
+    group: root
+
+- name: Create self-signed certificate and key
+  ansible.builtin.command: >
+    openssl req -new -newkey rsa:2048 -days 365 -nodes -x509
+    -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN={{ inventory_hostname }}"
+    -keyout /etc/ssl/{{ ssl_dir }}/selfsigned.key
+    -out /etc/ssl/{{ ssl_dir }}/selfsigned.crt
+  args:
+    creates: "/etc/ssl/{{ ssl_dir }}/selfsigned.crt"
+
+- name: Configure Apache SSL
+  ansible.builtin.template:
+    src: ssl.conf.j2
+    dest: /etc/httpd/conf.d/ssl.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create SSL directory
+  ansible.builtin.file:
+    path: "/etc/ssl/{{ ssl_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Generate self-signed SSL certificate
+  ansible.builtin.command: >
+    openssl req -x509 -nodes -days 365
+    -newkey rsa:2048
+    -keyout /etc/ssl/{{ ssl_dir }}/selfsigned.key
+    -out /etc/ssl/{{ ssl_dir }}/selfsigned.crt
+    -subj "/C=US/ST=State/L=City/O=Org/OU=IT Department/CN={{ ansible_fqdn }}"
+  args:
+    creates: "/etc/ssl/{{ ssl_dir }}/selfsigned.crt"
+
+- name: Validate Apache config
+  ansible.builtin.command: apachectl configtest
+  register: apache_configtest
+  changed_when: false
+  failed_when: apache_configtest.rc != 0
+
+- name: Restart Apache to load SSL config
+  become: true
+  ansible.builtin.service:
+    name: "{{ apache_service }}"
+    state: restarted
